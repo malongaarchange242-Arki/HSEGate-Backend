@@ -1,5 +1,34 @@
 """AI Service for PPE detection using YOLO."""
 
+import torch
+from ultralytics.nn.tasks import DetectionModel
+from ultralytics.nn.modules import Conv, Bottleneck, C2f, SPPF, Detect, DFL
+
+# ============================================================
+# CORRECTION POUR PYTORCH 2.6+
+# Autoriser les classes Ultralytics nécessaires pour le chargement
+# ============================================================
+
+# Liste des classes Ultralytics à autoriser
+SAFE_GLOBALS = [
+    DetectionModel,
+    Conv,
+    Bottleneck,
+    C2f,
+    SPPF,
+    Detect,
+    DFL,
+]
+
+# Enregistrer les classes comme sécurisées
+try:
+    torch.serialization.add_safe_globals(SAFE_GLOBALS)
+    print("✅ PyTorch safe globals configured for Ultralytics")
+except Exception as e:
+    print(f"⚠️ Could not configure safe globals: {e}")
+
+# ============================================================
+
 import cv2
 import numpy as np
 from typing import Dict, List, Optional
@@ -20,7 +49,10 @@ class AIService:
             model_path: Path to the trained YOLO model weights
         """
         try:
-            self.model = YOLO(model_path)
+            # Utiliser le contexte safe_globals pour le chargement
+            with torch.serialization.safe_globals(SAFE_GLOBALS):
+                self.model = YOLO(model_path)
+            
             self.confidence_threshold = 0.5
             
             # Définition des EPI requis pour la conformité HSE
