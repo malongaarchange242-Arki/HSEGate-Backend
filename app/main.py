@@ -73,21 +73,44 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware
+# ==================== CORS MIDDLEWARE (CORRIGÉ) ====================
+# Configuration complète pour développement
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5500",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5500",
+    "http://127.0.0.1:8000",
+]
+
+# Ajouter les origines du settings si disponibles
+if hasattr(settings, 'CORS_ORIGINS') and settings.CORS_ORIGINS:
+    ALLOWED_ORIGINS.extend(settings.CORS_ORIGINS)
+
+# En développement, ajouter * pour faciliter les tests
+if settings.DEBUG:
+    ALLOWED_ORIGINS.append("*")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS if hasattr(settings, 'CORS_ORIGINS') else ["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
+logger.info(f"🔥 CORS enabled - Accepting requests from: {ALLOWED_ORIGINS[:5]}...")
+
+# ==================== STATIC FILES ====================
 # Serve generated QR codes, badges, and face images.
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+logger.info(f"📁 Upload directory: {settings.UPLOAD_DIR.absolute()}")
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
-# Exception handlers
+# ==================== EXCEPTION HANDLERS ====================
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Global exception handler for unhandled errors."""
@@ -98,7 +121,7 @@ async def global_exception_handler(request, exc):
     )
 
 
-# Health check endpoints
+# ==================== HEALTH CHECK ENDPOINTS ====================
 @app.get("/", tags=["System"])
 async def root():
     """Root endpoint with API information."""
@@ -122,27 +145,32 @@ async def health_check():
     }
 
 
-# Include routers (only if they exist)
+# ==================== INCLUDE ROUTERS ====================
 api_prefix = "/api/v1"
 
 if auth_router:
     app.include_router(auth_router, prefix=f"{api_prefix}/auth", tags=["Authentication"])
+    logger.info("🔐 Auth router registered")
 if workers_router:
     app.include_router(workers_router, prefix=f"{api_prefix}/workers", tags=["Workers"])
+    logger.info("👥 Workers router registered")
 if incidents_router:
     app.include_router(incidents_router, prefix=f"{api_prefix}/incidents", tags=["Incidents"])
+    logger.info("⚠️ Incidents router registered")
 if risk_reports_router:
     app.include_router(risk_reports_router, prefix=f"{api_prefix}/risk-reports", tags=["Risk Reports"])
+    logger.info("📋 Risk reports router registered")
 if ws_router:
     app.include_router(ws_router, prefix=f"{api_prefix}/ws", tags=["WebSocket"])
+    logger.info("🔌 WebSocket router registered")
 if ppe_router:
     app.include_router(ppe_router, prefix=f"{api_prefix}/ppe", tags=["PPE Detection"])
+    logger.info("🛡️ PPE Detection router registered")
 
 # Log registered API routes for debugging deployment issues
-logger.info(
-    "Registered API routes: %s",
-    [route.path for route in app.routes if route.path.startswith(api_prefix)]
-)
+api_routes = [route.path for route in app.routes if route.path.startswith(api_prefix)]
+logger.info(f"📋 Registered API routes ({len(api_routes)}): {api_routes}")
+
 
 if __name__ == "__main__":
     import uvicorn
