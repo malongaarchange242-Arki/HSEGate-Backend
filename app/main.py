@@ -1,5 +1,6 @@
 """Main FastAPI application for HSEGate AI Backend."""
 
+import importlib
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -26,47 +27,25 @@ except Exception as e:
     logger.error(f"❌ Database initialization error: {e}")
 
 # Import routers (with error handling)
-try:
-    from app.api.routes.auth import router as auth_router
-    logger.info("✅ auth_router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ auth_router not available: {e}")
-    auth_router = None
+def load_router(module_name: str, router_name: str = "router"):
+    try:
+        module = importlib.import_module(module_name)
+        router = getattr(module, router_name)
+        logger.info(f"✅ {module_name} loaded")
+        return router
+    except Exception as e:
+        logger.exception(f"⚠️ Failed to load router {module_name}: {e}")
+        return None
 
-try:
-    from app.api.routes.workers import router as workers_router
-    logger.info("✅ workers_router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ workers_router not available: {e}")
-    workers_router = None
+auth_router = load_router("app.api.routes.auth")
+workers_router = load_router("app.api.routes.workers")
+incidents_router = load_router("app.api.routes.incidents")
+risk_reports_router = load_router("app.api.routes.risk_reports")
+ws_router = load_router("app.api.routes.ws")
+ppe_router = load_router("app.api.routes.ppe")
 
-try:
-    from app.api.routes.incidents import router as incidents_router
-    logger.info("✅ incidents_router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ incidents_router not available: {e}")
-    incidents_router = None
-
-try:
-    from app.api.routes.risk_reports import router as risk_reports_router
-    logger.info("✅ risk_reports_router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ risk_reports_router not available: {e}")
-    risk_reports_router = None
-
-try:
-    from app.api.routes.ws import router as ws_router
-    logger.info("✅ ws_router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ ws_router not available: {e}")
-    ws_router = None
-
-try:
-    from app.api.routes.ppe import router as ppe_router
-    logger.info("✅ ppe_router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ ppe_router not available: {e}")
-    ppe_router = None
+if settings.DEBUG and auth_router is None:
+    logger.error("Authentication routes not loaded. /api/v1/auth/* endpoints will be unavailable.")
 
 
 @asynccontextmanager
@@ -159,6 +138,11 @@ if ws_router:
 if ppe_router:
     app.include_router(ppe_router, prefix=f"{api_prefix}/ppe", tags=["PPE Detection"])
 
+# Log registered API routes for debugging deployment issues
+logger.info(
+    "Registered API routes: %s",
+    [route.path for route in app.routes if route.path.startswith(api_prefix)]
+)
 
 if __name__ == "__main__":
     import uvicorn
