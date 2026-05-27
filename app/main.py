@@ -74,7 +74,7 @@ app = FastAPI(
 )
 
 # ==================== CORS MIDDLEWARE (CORRIGÉ) ====================
-# Configuration complète pour développement
+# Configuration complète pour développement et production
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5500",
@@ -82,6 +82,8 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5500",
     "http://127.0.0.1:8000",
+    "https://hsegate-frontend.onrender.com",   # Frontend sur Render
+    "https://hsegate-backend.onrender.com",    # Backend sur Render
 ]
 
 # Ajouter les origines du settings si disponibles

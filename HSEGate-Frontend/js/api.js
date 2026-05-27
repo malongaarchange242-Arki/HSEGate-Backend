@@ -3,13 +3,31 @@
  * Gère la communication avec le backend FastAPI
  */
 
-const DEFAULT_API_ORIGIN = 'http://localhost:8000';
-const API_ORIGIN = (window.API_ORIGIN || DEFAULT_API_ORIGIN).replace(/\/+$/, '');
-const API_BASE_URL = `${API_ORIGIN}/api/v1`;
+// ============================================================
+// CONFIGURATION DYNAMIQUE SELON L'ENVIRONNEMENT
+// ============================================================
+
+// Détecter si on est en production (Render) ou développement (local)
+const isProduction = window.location.hostname !== 'localhost' && 
+                     window.location.hostname !== '127.0.0.1';
+
+// URL du backend selon l'environnement
+const BACKEND_URL = isProduction 
+    ? 'https://hsegate-backend.onrender.com'
+    : 'http://localhost:8000';
+
+const API_BASE_URL = `${BACKEND_URL}/api/v1`;
 const ADMIN_EMAIL = 'admin@hsegate.com';
 const ADMIN_PASSWORD = 'admin123';
 
 let authToken = localStorage.getItem('authToken');
+
+// Afficher la configuration dans la console
+console.log('========================================');
+console.log('🚀 HSEGate API Client');
+console.log(`📍 Environnement: ${isProduction ? 'PRODUCTION (Render)' : 'DÉVELOPPEMENT (Local)'}`);
+console.log(`📍 API URL: ${API_BASE_URL}`);
+console.log('========================================');
 
 /**
  * Classe pour gérer les appels API
@@ -24,16 +42,22 @@ class HSEGateAPI {
      */
     async authenticate() {
         try {
+            console.log(`🔐 Authentification vers: ${API_BASE_URL}/auth/login`);
+            
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
+                mode: 'cors',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({
                     email: ADMIN_EMAIL,
                     password: ADMIN_PASSWORD,
                 }),
             });
+
+            console.log(`📊 Statut réponse: ${response.status}`);
 
             if (!response.ok) {
                 const error = await response.json();
@@ -58,6 +82,7 @@ class HSEGateAPI {
         if (!this.token) {
             await this.authenticate();
         }
+        return this.token;
     }
 
     async _fetchWithAuth(url, options = {}) {
@@ -65,7 +90,8 @@ class HSEGateAPI {
 
         options.headers = {
             ...(options.headers || {}),
-            Authorization: `Bearer ${this.token}`,
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/json',
         };
 
         let response = await fetch(url, options);
@@ -128,6 +154,7 @@ class HSEGateAPI {
             }
 
             const data = await response.json();
+            console.log(`✅ ${data.length} workers récupérés`);
             return data;
         } catch (error) {
             console.error('❌ Error fetching workers:', error);
@@ -251,6 +278,7 @@ const api = new HSEGateAPI();
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await api.ensureAuthenticated();
+        console.log('✅ API ready and authenticated');
     } catch (error) {
         console.error('Failed to authenticate on page load:', error);
     }
