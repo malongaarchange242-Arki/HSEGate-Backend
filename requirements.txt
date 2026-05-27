@@ -20,7 +20,7 @@ PyJWT==2.9.0  # ← CHANGÉ : 2.8.1 -> 2.9.0
 
 # ==================== AI & VISION ====================
 ultralytics==8.0.207
-opencv-python==4.8.1.78
+opencv-python-headless==4.8.1.78
 numpy==1.24.3
 
 # ==================== IMAGE PROCESSING ====================
