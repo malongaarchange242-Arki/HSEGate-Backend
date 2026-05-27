@@ -157,6 +157,56 @@ async def health_check():
     }
 
 
+@app.get("/diagnostic", tags=["System"], include_in_schema=False)
+async def diagnostic():
+    """Diagnostic endpoint for troubleshooting deployment issues."""
+    import os
+    from sqlalchemy import text
+    
+    db_connected = False
+    db_error = None
+    try:
+        # Try a simple database query
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            db_connected = True
+    except Exception as e:
+        db_error = str(e)
+    
+    return {
+        "status": "diagnostic",
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "debug": settings.DEBUG,
+        "environment": {
+            "HOST": settings.HOST,
+            "PORT": settings.PORT,
+            "CORS_ENABLED": True,
+            "ALLOWED_ORIGINS": len(set(ALLOWED_ORIGINS)),
+        },
+        "database": {
+            "connected": db_connected,
+            "error": db_error,
+            "url": settings.DATABASE_URL.split("@")[0] + "@..." if "@" in settings.DATABASE_URL else "hidden",
+        },
+        "api_routes": {
+            "auth": "/api/v1/auth",
+            "workers": "/api/v1/workers",
+            "incidents": "/api/v1/incidents",
+            "risk_reports": "/api/v1/risk-reports",
+            "ppe": "/api/v1/ppe",
+        },
+        "routers_loaded": {
+            "auth": auth_router is not None,
+            "workers": workers_router is not None,
+            "incidents": incidents_router is not None,
+            "risk_reports": risk_reports_router is not None,
+            "ws": ws_router is not None,
+            "ppe": ppe_router is not None,
+        },
+    }
+
+
 # ==================== INCLUDE ROUTERS ====================
 api_prefix = "/api/v1"
 
