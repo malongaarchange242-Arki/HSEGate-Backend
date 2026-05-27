@@ -73,7 +73,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ==================== CORS MIDDLEWARE (CORRIGÉ) ====================
+# ==================== CORS MIDDLEWARE (Must be added FIRST) ====================
 # Configuration complète pour développement et production
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -86,13 +86,15 @@ ALLOWED_ORIGINS = [
     "https://hsegate-backend.onrender.com",    # Backend sur Render
 ]
 
-# Ajouter les origines du settings si disponibles
+# Add origins from .env if available
 if hasattr(settings, 'CORS_ORIGINS') and settings.CORS_ORIGINS:
-    ALLOWED_ORIGINS.extend(settings.CORS_ORIGINS)
+    if isinstance(settings.CORS_ORIGINS, list):
+        ALLOWED_ORIGINS.extend(settings.CORS_ORIGINS)
 
-# En développement, ajouter * pour faciliter les tests
+# In debug/development mode, allow all origins
 if settings.DEBUG:
-    ALLOWED_ORIGINS.append("*")
+    ALLOWED_ORIGINS.insert(0, "*")
+    logger.warning("⚠️ DEBUG MODE: CORS allowing all origins (*)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -101,9 +103,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=3600,
 )
 
-logger.info(f"🔥 CORS enabled - Accepting requests from: {ALLOWED_ORIGINS[:5]}...")
+logger.info(f"🔥 CORS enabled - {len(set(ALLOWED_ORIGINS))} unique origins allowed")
 
 # ==================== STATIC FILES ====================
 # Serve generated QR codes, badges, and face images.
@@ -116,11 +119,18 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Global exception handler for unhandled errors."""
-    logger.error(f"Unhandled exception: {exc}")
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error", "type": type(exc).__name__},
     )
+
+
+# ==================== CORS PREFLIGHT HANDLER ====================
+@app.options("/{full_path:path}", include_in_schema=False)
+async def preflight_handler(full_path: str):
+    """Handle CORS preflight requests (OPTIONS)."""
+    return {"status": "ok"}
 
 
 # ==================== HEALTH CHECK ENDPOINTS ====================

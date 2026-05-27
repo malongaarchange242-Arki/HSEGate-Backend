@@ -1,16 +1,20 @@
 """AI Service for PPE detection using YOLO."""
 
 import torch
+from torch.nn.modules.container import Sequential
 from ultralytics.nn.tasks import DetectionModel
 from ultralytics.nn.modules import Conv, Bottleneck, C2f, SPPF, Detect, DFL
 
 # ============================================================
 # CORRECTION POUR PYTORCH 2.6+
-# Autoriser les classes Ultralytics nécessaires pour le chargement
+# Autoriser les classes Ultralytics ET PyTorch nécessaires
 # ============================================================
 
-# Liste des classes Ultralytics à autoriser
+# Liste des classes à autoriser (Ultralytics + PyTorch)
 SAFE_GLOBALS = [
+    # Classes PyTorch
+    Sequential,
+    # Classes Ultralytics
     DetectionModel,
     Conv,
     Bottleneck,

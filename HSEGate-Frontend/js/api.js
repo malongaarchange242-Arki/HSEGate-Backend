@@ -51,6 +51,7 @@ class HSEGateAPI {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     email: ADMIN_EMAIL,
                     password: ADMIN_PASSWORD,
@@ -60,8 +61,12 @@ class HSEGateAPI {
             console.log(`📊 Statut réponse: ${response.status}`);
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Authentication failed');
+                try {
+                    const error = await response.json();
+                    throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+                } catch (e) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
             }
 
             const data = await response.json();
@@ -70,7 +75,12 @@ class HSEGateAPI {
             console.log('✅ Authentication successful');
             return data;
         } catch (error) {
-            console.error('❌ Authentication error:', error);
+            if (error.message.includes('CORS') || error.message.includes('fetch')) {
+                console.error('❌ Network/CORS error:', error.message);
+                console.warn('⚠️ Check backend connectivity and CORS configuration');
+            } else {
+                console.error('❌ Authentication error:', error);
+            }
             throw error;
         }
     }
