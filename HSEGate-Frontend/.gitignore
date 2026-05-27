@@ -1,0 +1,77 @@
+# =========================
+# Frontend .gitignore
+# =========================
+
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+.cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS
+Thumbs.db
+.DS_Store
+*.swp
+
+# Testing
+.pytest_cache/
+__pycache__/
+
+# Production
+dist/
+build/
+
+# Miscellaneous
+.history/
+.project
+.settings/
+*.bak
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+
+# Local development files
+local-config.js
+custom-settings.js

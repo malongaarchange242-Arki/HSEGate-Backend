@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSEGate - Enregistrement Travailleur</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h1>📸 HSEGate - Enregistrement</h1>
+            </div>
+            <div class="navbar-menu">
+                <a href="../index.html" class="nav-link">Dashboard</a>
+                <a href="../workers.html" class="nav-link">Travailleurs</a>
+                <a href="register.html" class="nav-link active">Nouveau</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="register-container">
+                <h2>👷 Enregistrement d'un Nouveau Travailleur</h2>
+                
+                <div class="register-grid">
+                    <!-- Formulaire -->
+                    <section class="form-section">
+                        <form id="workerForm">
+                            <div class="form-group">
+                                <label for="fullname">👤 Nom Complet *</label>
+                                <input type="text" id="fullname" name="fullname" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">📧 Email</label>
+                                <input type="email" id="email" name="email">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">📞 Téléphone</label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="department">🏢 Département</label>
+                                <input type="text" id="department" name="department">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="position">💼 Position</label>
+                                <input type="text" id="position" name="position">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="company">🏭 Entreprise</label>
+                                <input type="text" id="company" name="company">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="blood_group">🩸 Groupe Sanguin</label>
+                                <select id="blood_group" name="blood_group">
+                                    <option value="">-- Sélectionner --</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="emergency_contact">🆘 Contact d'Urgence</label>
+                                <input type="tel" id="emergency_contact" name="emergency_contact">
+                            </div>
+
+                            <input type="hidden" id="face_image_base64" name="face_image_base64" value="">
+                        </form>
+                    </section>
+
+                    <!-- Zone Webcam -->
+                    <section class="webcam-section">
+                        <div class="webcam-container">
+                            <h3>📸 Capture Photo du Visage</h3>
+                            
+                            <div id="webcamArea" class="webcam-area">
+                                <video id="video" width="100%" height="auto"></video>
+                                <canvas id="canvas" style="display:none;"></canvas>
+                            </div>
+
+                            <div class="webcam-controls">
+                                <button type="button" id="startWebcamBtn" class="btn btn-primary" onclick="startWebcam()">
+                                    ▶️ Démarrer Caméra
+                                </button>
+                                <button type="button" id="captureBtn" class="btn btn-success" onclick="capturePhoto()" style="display:none;">
+                                    📷 Prendre Photo
+                                </button>
+                                <button type="button" id="stopWebcamBtn" class="btn btn-danger" onclick="stopWebcam()" style="display:none;">
+                                    ⏹️ Arrêter Caméra
+                                </button>
+                            </div>
+
+                            <!-- Aperçu capture -->
+                            <div id="capturePreview" class="capture-preview" style="display:none;">
+                                <h4>Aperçu de la Photo</h4>
+                                <img id="capturedImage" src="" alt="Photo capturée">
+                                <div class="preview-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="retakePhoto()">
+                                        🔄 Reprendre
+                                    </button>
+                                    <button type="button" class="btn btn-success" onclick="acceptPhoto()">
+                                        ✅ Valider
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alternative upload -->
+                        <div class="upload-alternative">
+                            <h4>📤 Ou Importer une Image</h4>
+                            <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Bouton soumission -->
+                <div class="form-submit">
+                    <button type="submit" form="workerForm" class="btn btn-primary btn-large">
+                        ✅ Enregistrer Travailleur
+                    </button>
+                </div>
+            </div>
+
+            <!-- Message d'état -->
+            <div id="statusMessage" class="status-message" style="display:none;"></div>
+        </main>
+    </div>
+
+    <!-- Modal de succès -->
+    <div id="successModal" class="modal" style="display:none;">
+        <div class="modal-content success-modal">
+            <div class="modal-header">
+                <h2>✅ Travailleur Enregistré avec Succès!</h2>
+            </div>
+            <div class="modal-body">
+                <div class="success-info">
+                    <p><strong>Matricule:</strong> <span id="result-matricule"></span></p>
+                    <p><strong>UUID:</strong> <span id="result-uuid"></span></p>
+                    <p><strong>Nom:</strong> <span id="result-name"></span></p>
+                </div>
+
+                <div class="success-badges">
+                    <div class="badge-item">
+                        <p>✅ Badge Généré</p>
+                        <img id="badge-image" src="" alt="Badge" width="150">
+                    </div>
+                    <div class="badge-item">
+                        <p>✅ QR Code Généré</p>
+                        <img id="qrcode-image" src="" alt="QR Code" width="150">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="downloadBadge()">
+                    💾 Télécharger Badge
+                </button>
+                <button class="btn btn-primary" onclick="closeSuccessModal()">
+                    ✅ Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/webcam.js"></script>
+    <script src="../js/register.js"></script>
+</body>
+</html>

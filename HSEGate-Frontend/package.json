@@ -1,0 +1,24 @@
+{
+  "name": "hsegate-frontend",
+  "version": "1.0.0",
+  "description": "Frontend pour le système HSEGate - Biométrie et identification des travailleurs",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=5500",
+    "dev": "live-server --port=5500",
+    "serve": "python -m http.server 5500"
+  },
+  "keywords": [
+    "hsegate",
+    "biometrie",
+    "worker",
+    "identification",
+    "qrcode",
+    "webcam"
+  ],
+  "author": "HSEGate Team",
+  "license": "Proprietary",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

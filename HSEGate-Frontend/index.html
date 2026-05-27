@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSEGate AI - Dashboard de Supervision</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 1.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--radius-sm);
+            color: var(--gray);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--light);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .nav-item i {
+            width: 24px;
+            font-size: 1.25rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .page-header {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title h1 {
+            font-size: 1.75rem;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .page-title p {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .date-time {
+            text-align: right;
+        }
+
+        .date-time .date {
+            font-size: 0.875rem;
+            color: var(--gray);
+        }
+
+        .date-time .time {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-header h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon i {
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-card canvas {
+            max-height: 250px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .quick-actions h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Recent Workers */
+        .recent-workers {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .recent-workers h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .worker-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .worker-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .worker-item:hover {
+            background: var(--light);
+            transform: translateX(4px);
+        }
+
+        .worker-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .worker-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .worker-details h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .worker-details p {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .worker-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--gray);
+        }
+
+        .btn-outline:hover {
+            background: var(--light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .stat-card, .chart-card, .quick-actions, .recent-workers {
+            animation: slideUp 0.5s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .page-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .date-time {
+                text-align: center;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>HSEGate AI</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="workers.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Travailleurs</span>
+                </a>
+                <a href="workers/register.html" class="nav-item">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Ajouter</span>
+                </a>
+                <a href="scanner.html" class="nav-item">
+                    <i class="fas fa-camera"></i>
+                    <span>Scanner</span>
+                </a>
+                <a href="incidents.html" class="nav-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Incidents</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Rapports</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="page-title">
+                    <h1><i class="fas fa-chart-line"></i> Tableau de Bord</h1>
+                    <p>Supervision en temps réel de la sécurité HSE</p>
+                </div>
+                <div class="date-time">
+                    <div class="date" id="currentDate"></div>
+                    <div class="time" id="currentTime"></div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card" onclick="window.location.href='workers.html'">
+                    <div class="stat-header">
+                        <h3><i class="fas fa-users" style="margin-right: 0.5rem;"></i> TRAVAILLEURS</h3>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-hard-hat"></i>
+                        </div>
+                    </div>
+                    <div class="stat-number" id="workerCount">--</div>
+                    <div class="stat-trend">
+                        <span class="trend-up" id="workerTrend">
+                            <i class="fas fa-arrow-up"></i> +0%
+                        </span>
+                        <span><i class="fas fa-calendar-alt"></i> vs mois dernier</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" onclick="window.location.href='incidents.html'">
+                    <div class="stat-header">
+                        <h3><i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i> INCIDENTS</h3>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                    </div>
+                    <div class="stat-number" id="incidentCount">0</div>
+                    <div class="stat-trend">
+                        <span class="trend-down" id="incidentTrend">
+                            <i class="fas fa-arrow-down"></i> 0%
+                        </span>
+                        <span><i class="fas fa-chart-line"></i> vs mois dernier</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3><i class="fas fa-chart-pie" style="margin-right: 0.5rem;"></i> TAUX CONFORMITÉ</h3>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                    </div>
+                    <div class="stat-number" id="complianceRate">98<span style="font-size: 1.5rem;">%</span></div>
+                    <div class="stat-trend">
+                        <span class="trend-up">
+                            <i class="fas fa-arrow-up"></i> +2.5%
+                        </span>
+                        <span><i class="fas fa-chart-simple"></i> progression</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3><i class="fas fa-id-card" style="margin-right: 0.5rem;"></i> BADGES ACTIFS</h3>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                    </div>
+                    <div class="stat-number" id="badgeCount">--</div>
+                    <div class="stat-trend">
+                        <span class="trend-up" id="badgeTrend">
+                            <i class="fas fa-plus-circle"></i> +0
+                        </span>
+                        <span><i class="fas fa-clock"></i> nouveaux ce mois</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-line"></i> Évolution des Incidents</h3>
+                    <canvas id="incidentChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-pie"></i> Répartition des EPI Manquants</h3>
+                    <canvas id="ppeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3><i class="fas fa-bolt"></i> Actions Rapides</h3>
+                <div class="action-buttons">
+                    <a href="workers/register.html" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Ajouter un travailleur
+                    </a>
+                    <button class="btn btn-outline" onclick="location.reload()">
+                        <i class="fas fa-sync-alt"></i> Actualiser
+                    </button>
+                    <button class="btn btn-outline" onclick="window.print()">
+                        <i class="fas fa-print"></i> Imprimer rapport
+                    </button>
+                    <button class="btn btn-outline" onclick="exportData()">
+                        <i class="fas fa-file-export"></i> Exporter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Workers -->
+            <div class="recent-workers">
+                <h3><i class="fas fa-clock"></i> Derniers Travailleurs Ajoutés</h3>
+                <div id="recentWorkersList" class="worker-list">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p><i class="fas fa-spinner fa-spin"></i> Chargement...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let incidentChart, ppeChart;
+
+        // Mettre à jour l'heure et la date
+        function updateDateTime() {
+            const now = new Date();
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            
+            document.getElementById('currentDate').innerHTML = `<i class="fas fa-calendar-day"></i> ${now.toLocaleDateString('fr-FR', dateOptions)}`;
+            document.getElementById('currentTime').innerHTML = `<i class="fas fa-clock"></i> ${now.toLocaleTimeString('fr-FR', timeOptions)}`;
+        }
+
+        // Mettre à jour les statistiques
+        async function updateStats() {
+            try {
+                const workers = await api.getWorkers();
+                const activeWorkers = workers.filter(w => w.status === 'active').length;
+                const badgesCount = workers.filter(w => w.badge_id).length;
+                
+                document.getElementById('workerCount').innerHTML = `<i class="fas fa-users"></i> ${workers.length}`;
+                document.getElementById('badgeCount').innerHTML = `<i class="fas fa-id-card"></i> ${badgesCount}`;
+                
+                // Simuler des données (à remplacer par des vraies données API)
+                const incidents = Math.floor(Math.random() * 20);
+                document.getElementById('incidentCount').innerHTML = `<i class="fas fa-exclamation-circle"></i> ${incidents}`;
+                
+                return workers;
+            } catch (error) {
+                console.error('Error updating stats:', error);
+                return [];
+            }
+        }
+
+        // Mettre à jour les travailleurs récents
+        async function updateRecentWorkers() {
+            try {
+                const workers = await api.getWorkers();
+                const recentWorkers = workers.slice(-5).reverse();
+                
+                const container = document.getElementById('recentWorkersList');
+                
+                if (!recentWorkers.length) {
+                    container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray);"><i class="fas fa-users-slash"></i> Aucun travailleur enregistré</div>';
+                    return;
+                }
+                
+                container.innerHTML = recentWorkers.map(worker => `
+                    <div class="worker-item" onclick="window.location.href='workers.html'">
+                        <div class="worker-info">
+                            <div class="worker-avatar">
+                                <i class="fas fa-user"></i> ${worker.fullname.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="worker-details">
+                                <h4><i class="fas fa-user-tie"></i> ${escapeHtml(worker.fullname)}</h4>
+                                <p><i class="fas fa-id-badge"></i> ${worker.matricule} • <i class="fas fa-building"></i> ${worker.department || 'Non assigné'}</p>
+                            </div>
+                        </div>
+                        <span class="worker-status status-active">
+                            <i class="fas fa-check-circle"></i> Actif
+                        </span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading recent workers:', error);
+                document.getElementById('recentWorkersList').innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--danger);"><i class="fas fa-exclamation-circle"></i> Erreur de chargement</div>';
+            }
+        }
+
+        // Initialiser le graphique des incidents
+        function initIncidentChart() {
+            const ctx = document.getElementById('incidentChart').getContext('2d');
+            incidentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
+                    datasets: [{
+                        label: 'Incidents',
+                        data: [12, 19, 15, 17, 14, 10],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Alertes',
+                        data: [8, 12, 10, 9, 11, 7],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialiser le graphique des EPI manquants
+        function initPPEChart() {
+            const ctx = document.getElementById('ppeChart').getContext('2d');
+            ppeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Casque', 'Gilet', 'Lunettes', 'Gants', 'Chaussures'],
+                    datasets: [{
+                        data: [35, 25, 20, 12, 8],
+                        backgroundColor: [
+                            '#ef4444',
+                            '#f59e0b',
+                            '#3b82f6',
+                            '#10b981',
+                            '#8b5cf6'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Exporter les données
+        function exportData() {
+            const data = {
+                workers: allWorkers,
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hsegate_export_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('<i class="fas fa-check-circle"></i> Export terminé !', 'success');
+        }
+
+        // Afficher une notification toast
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : '#3b82f6'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                animation: slideUp 0.3s ease;
+                box-shadow: var(--shadow-lg);
+                font-weight: 500;
+            `;
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Échapper le HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        let allWorkers = [];
+
+        // Rafraîchir toutes les données
+        async function refreshDashboard() {
+            allWorkers = await updateStats();
+            await updateRecentWorkers();
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            await refreshDashboard();
+            initIncidentChart();
+            initPPEChart();
+            
+            // Rafraîchir toutes les 30 secondes
+            setInterval(refreshDashboard, 30000);
+        });
+    </script>
+</body>
+</html>
