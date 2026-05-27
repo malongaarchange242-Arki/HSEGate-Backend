@@ -3,7 +3,7 @@
  * Gère la communication avec le backend FastAPI
  */
 
-const API_ORIGIN = 'http://localhost:8000';
+const API_ORIGIN = 'https://hsegate-backend.onrender.com';
 const API_BASE_URL = `${API_ORIGIN}/api/v1`;
 const ADMIN_EMAIL = 'admin@hsegate.com';
 const ADMIN_PASSWORD = 'admin123';
