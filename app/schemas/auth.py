@@ -1,6 +1,4 @@
-"""Authentication schemas."""
-
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 from typing import Literal
 
@@ -8,7 +6,7 @@ from typing import Literal
 class RegisterRequest(BaseModel):
     """User registration request."""
     fullname: str
-    email: EmailStr
+    email: str
     password: str
     role: Literal["admin", "hse_supervisor", "worker"] = "worker"
 
@@ -23,7 +21,7 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     """User login request."""
-    email: EmailStr
+    email: str
     password: str
 
 
